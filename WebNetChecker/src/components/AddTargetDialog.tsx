@@ -33,6 +33,8 @@ function parseLines(text: string): ParsedLine[] {
         name: rawName || normalized.host,
         url: normalized.url,
         category: "custom",
+        tags: [],
+        pinned: false,
       },
       reason: null,
     });

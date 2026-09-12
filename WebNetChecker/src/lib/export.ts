@@ -136,13 +136,18 @@ export function parseTargetsCsv(csv: string): Target[] {
 
   const targets: Target[] = [];
   for (let i = 1; i < lines.length; i += 1) {
-    const cells = lines[i].split(","); // Simple split; real CSV needs a parser
+    const line = lines[i];
+    if (!line) continue;
+    const cells = line.split(","); // Simple split; real CSV needs a parser
     if (cells.length < 2) continue;
 
+    const url = cells[1] as string;
+    if (!url) continue;
+
     targets.push({
-      id: `custom:${cells[1]}`,
-      name: cells[0] || cells[1],
-      url: cells[1],
+      id: `custom:${url}`,
+      name: cells[0] || url,
+      url: url,
       category: cells[2] || "custom",
       tags: cells[3] ? cells[3].split(";") : [],
       pinned: cells[4] === "true",

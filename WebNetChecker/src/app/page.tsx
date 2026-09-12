@@ -15,14 +15,11 @@ import { CategorySection } from "@/components/CategorySection";
 import { EmptyState } from "@/components/EmptyState";
 import { ComparisonView } from "@/components/ComparisonView";
 import { CATEGORIES, getCategory } from "@/lib/config/categories";
-import type { Target } from "@/types/checker";
-import type { SeedResponse } from "@/types/seed";
 
 export default function HomePage() {
   const targets = useScanStore((s) => s.targets);
   const mode = useScanStore((s) => s.mode);
   const isScanning = useScanStore((s) => s.isScanning);
-  const setTargets = useScanStore((s) => s.setTargets);
   const removeTarget = useScanStore((s) => s.removeTarget);
   const hydrateFromCache = useScanStore((s) => s.hydrateFromCache);
   const error = useScanStore((s) => s.error);

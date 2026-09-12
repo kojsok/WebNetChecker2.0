@@ -156,5 +156,7 @@ export const SEED_TARGETS: readonly Target[] = SEED_CATALOG.flatMap((category) =
     name: service.name,
     url: service.url,
     category: category.id,
+    tags: [],
+    pinned: false,
   })),
 );

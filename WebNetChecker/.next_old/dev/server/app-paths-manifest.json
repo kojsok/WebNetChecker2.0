@@ -1,0 +1,5 @@
+{
+  "/api/scan/latest/route": "app/api/scan/latest/route.js",
+  "/api/scan/route": "app/api/scan/route.js",
+  "/page": "app/page.js"
+}

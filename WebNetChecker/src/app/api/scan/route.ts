@@ -74,6 +74,8 @@ export async function POST(request: Request): Promise<Response> {
       name: sanitizeName(raw.name, normalized.host),
       url: normalized.url,
       category: raw.category ?? "custom",
+      tags: [],
+      pinned: false,
     });
   }
 

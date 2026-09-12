@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback } from "react";
 import { useScanStore } from "@/store/scan-store";
 import { useScan } from "@/hooks/useScan";
-import { Target, CheckResult } from "@/types/checker";
+import { Target } from "@/types/checker";
 import { cn } from "@/lib/cn";
-import { X, Play, Timer } from "lucide-react";
+import { Play } from "lucide-react";
 
 function ComparisonChart({
   targetA,
@@ -172,18 +171,20 @@ export function ComparisonView() {
               <div className="border border-steel bg-carbon p-4 font-mono">
                 <div className="text-[10px] text-silver/50 uppercase mb-1">{targetA.name}</div>
                 <div className="text-2xl text-neon">
-                  {(history[targetA.url] && history[targetA.url].length > 0)
-                    ? history[targetA.url][history[targetA.url].length - 1]
-                    : "—"}
+                  {(() => {
+                    const h = history[targetA.url];
+                    return (h && h.length > 0) ? h[h.length - 1] : "—";
+                  })()}
                   <span className="text-xs text-silver/40 ml-1">ms</span>
                 </div>
               </div>
               <div className="border border-steel bg-carbon p-4 font-mono">
                 <div className="text-[10px] text-silver/50 uppercase mb-1">{targetB.name}</div>
                 <div className="text-2xl text-ok">
-                  {(history[targetB.url] && history[targetB.url].length > 0)
-                    ? history[targetB.url][history[targetB.url].length - 1]
-                    : "—"}
+                  {(() => {
+                    const h = history[targetB.url];
+                    return (h && h.length > 0) ? h[h.length - 1] : "—";
+                  })()}
                   <span className="text-xs text-silver/40 ml-1">ms</span>
                 </div>
               </div>

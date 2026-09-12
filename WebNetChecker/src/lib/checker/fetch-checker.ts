@@ -9,6 +9,19 @@ function getHeader(headers: any, name: string): string | null {
   return headers[name.toLowerCase()] ?? headers[name] ?? null;
 }
 
+function normalizeHeaders(headers: any): Record<string, string> {
+  const normalized: Record<string, string> = {};
+  if (!headers) return normalized;
+  for (const [key, value] of Object.entries(headers)) {
+    if (Array.isArray(value)) {
+      normalized[key] = value.join(", ");
+    } else if (typeof value === "string") {
+      normalized[key] = value;
+    }
+  }
+  return normalized;
+}
+
 /**
  * Build the per-check result from a target and a verdict.
  */
@@ -158,8 +171,16 @@ async function performRequest(url: string, opts: CheckOptions): Promise<MinimalR
       headersTimeout: opts.timeoutMs,
       bodyTimeout: opts.timeoutMs,
     });
-    return getResponse;
+    return {
+      statusCode: getResponse.statusCode,
+      headers: normalizeHeaders(getResponse.headers),
+      body: getResponse.body,
+    };
   }
 
-  return headResponse;
+  return {
+    statusCode: headResponse.statusCode,
+    headers: normalizeHeaders(headResponse.headers),
+    body: headResponse.body,
+  };
 }
