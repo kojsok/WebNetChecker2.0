@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Play, Square, Terminal, LayoutGrid, RefreshCw, Plus } from "lucide-react";
+import { Play, Square, Terminal, LayoutGrid, RefreshCw, Plus, Clock } from "lucide-react";
 import { useScanStore } from "@/store/scan-store";
 import { ExportMenu } from "@/components/ExportMenu";
 import { AddTargetDialog } from "@/components/AddTargetDialog";
@@ -63,6 +63,16 @@ export function Toolbar({ onRun, onCancel }: Props) {
           }`}
         >
           <LayoutGrid className="size-3.5" /> Карточки
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("compare")}
+          aria-pressed={mode === "compare"}
+          className={`flex items-center gap-1.5 border-l border-steel px-3 py-1.5 font-mono text-[11px] uppercase transition-colors ${
+            mode === "compare" ? "bg-steel text-neon" : "text-silver/60 hover:text-silver-bright"
+          }`}
+        >
+          <Clock className="size-3.5" /> Сравнение
         </button>
         <button
           type="button"

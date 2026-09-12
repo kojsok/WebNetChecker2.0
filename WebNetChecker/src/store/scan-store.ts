@@ -7,7 +7,7 @@ import type { CheckResult, CheckStatus, Target } from "@/types/checker";
 import type { ScanEvent } from "@/types/scan";
 import { isFailed, isHealthy } from "@/lib/format";
 
-export type ViewMode = "cards" | "terminal";
+export type ViewMode = "cards" | "terminal" | "compare";
 export type SortKey = "name" | "latency" | "status";
 export type StatusFilter = "all" | "available" | "blocked" | "failed";
 
@@ -29,12 +29,14 @@ export interface ScanState {
   statusFilter: StatusFilter;
   sortKey: SortKey;
   autoRefreshMs: number;
+  compareTargets: string[];
 
   setTargets: (targets: Target[]) => void;
   addTargets: (targets: Target[]) => void;
   removeTarget: (id: string) => void;
   togglePin: (id: string) => void;
   updateTags: (id: string, tags: string[]) => void;
+  setCompareTargets: (ids: string[]) => void;
   beginScan: (total: number) => void;
   applyEvent: (event: ScanEvent) => void;
   endScan: () => void;
@@ -65,9 +67,11 @@ export const useScanStore = create<ScanState>((set) => ({
   mode: "cards",
   query: "",
   categoryFilter: "all",
+  tagFilter: null,
   statusFilter: "all",
   sortKey: "name",
   autoRefreshMs: 0,
+  compareTargets: [],
 
   setTargets: (targets) => {
     const normalized = targets.map((t) => {
@@ -115,6 +119,8 @@ export const useScanStore = create<ScanState>((set) => ({
       targets: state.targets.map((t) => (t.id === id ? { ...t, tags } : t)),
     })),
 
+  setCompareTargets: (ids) => set({ compareTargets: ids }),
+
   beginScan: (total) => set({ isScanning: true, completed: 0, total, error: null }),
 
   applyEvent: (event) =>
@@ -158,6 +164,7 @@ export const useScanStore = create<ScanState>((set) => ({
   setMode: (mode) => set({ mode }),
   setQuery: (query) => set({ query }),
   setCategoryFilter: (categoryFilter) => set({ categoryFilter }),
+  setTagFilter: (tagFilter) => set({ tagFilter }),
   setStatusFilter: (statusFilter) => set({ statusFilter }),
   setSortKey: (sortKey) => set({ sortKey }),
   setAutoRefreshMs: (autoRefreshMs) => set({ autoRefreshMs }),

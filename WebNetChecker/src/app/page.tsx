@@ -13,6 +13,7 @@ import { ScanProgress } from "@/components/ScanProgress";
 import { TerminalView } from "@/components/TerminalView";
 import { CategorySection } from "@/components/CategorySection";
 import { EmptyState } from "@/components/EmptyState";
+import { ComparisonView } from "@/components/ComparisonView";
 import { CATEGORIES, getCategory } from "@/lib/config/categories";
 import type { Target } from "@/types/checker";
 import type { SeedResponse } from "@/types/seed";
@@ -139,6 +140,8 @@ export default function HomePage() {
 
       {mode === "terminal" ? (
         <TerminalView />
+      ) : mode === "compare" ? (
+        <ComparisonView />
       ) : targets.length === 0 ? (
         <EmptyState
           message="Нет целей для проверки"
