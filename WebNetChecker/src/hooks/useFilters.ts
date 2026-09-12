@@ -20,6 +20,7 @@ export function useFilters(): FilteredEntry[] {
   const categoryFilter = useScanStore((s) => s.categoryFilter);
   const statusFilter = useScanStore((s) => s.statusFilter);
   const sortKey = useScanStore((s) => s.sortKey);
+  const tagFilter = useScanStore((s) => s.tagFilter);
 
   return useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -33,7 +34,10 @@ export function useFilters(): FilteredEntry[] {
     }));
 
     const filtered = entries.filter((entry) => {
+      const target = targets.find((t) => t.id === entry.targetId);
       if (categoryFilter !== "all" && entry.targetCategory !== categoryFilter) return false;
+
+      if (tagFilter && !target?.tags.includes(tagFilter)) return false;
 
       if (statusFilter !== "all") {
         const status = entry.result?.status;
@@ -44,7 +48,7 @@ export function useFilters(): FilteredEntry[] {
       }
 
       if (needle) {
-        const haystack = `${entry.targetName} ${entry.targetUrl}`.toLowerCase();
+        const haystack = `${entry.targetName} ${entry.targetUrl} ${target?.tags.join(" ")}`.toLowerCase();
         if (!haystack.includes(needle)) return false;
       }
 

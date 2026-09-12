@@ -1,6 +1,7 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Pin, PinOff } from "lucide-react";
+import { useScanStore } from "@/store/scan-store";
 import type { CheckResult, CheckStatus } from "@/types/checker";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatHttpStatus, formatLatency } from "@/lib/format";
@@ -16,6 +17,35 @@ const STRIP: Record<CheckStatus, string> = {
   pending: "bg-neon animate-pulse-neon",
 };
 
+function Sparkline({ data }: { data: number[] }) {
+  if (data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const width = 60;
+  const height = 20;
+  const points = data
+    .map((v, i) => {
+      const x = (i / (data.length - 1)) * width;
+      const y = height - ((v - min) / range) * height;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        points={points}
+        className="text-silver/40"
+      />
+    </svg>
+  );
+}
+
 interface Props {
   name: string;
   url: string;
@@ -26,6 +56,10 @@ interface Props {
 
 export function ServiceCard({ name, url, result, onRetry, onRemove }: Props) {
   const status: CheckStatus = result?.status ?? "pending";
+  const { history, togglePin, targets } = useScanStore();
+  const target = targets.find((t) => t.url === url);
+  const isPinned = target?.pinned ?? false;
+  const latencyHistory = history[url] ?? [];
 
   return (
     <article className="group relative flex items-stretch border border-steel bg-carbon transition-colors hover:border-silver/60">
@@ -45,8 +79,9 @@ export function ServiceCard({ name, url, result, onRetry, onRemove }: Props) {
         <dl className="flex items-center gap-4 font-mono text-[11px] text-silver">
           <div className="flex items-center gap-1">
             <dt className="text-silver/50">LAT</dt>
-            <dd className={cn(status === "available" && "text-ok", status === "pending" && "text-neon")}>
+            <dd className={cn("flex items-center gap-2", status === "available" && "text-ok", status === "pending" && "text-neon")}>
               {formatLatency(result?.latencyMs ?? null)}
+              <Sparkline data={latencyHistory} />
             </dd>
           </div>
           <div className="flex items-center gap-1">
@@ -54,14 +89,36 @@ export function ServiceCard({ name, url, result, onRetry, onRemove }: Props) {
             <dd>{formatHttpStatus(result?.httpStatus ?? null)}</dd>
           </div>
           {result?.errorMessage ? (
-            <p className="min-w-0 flex-1 truncate text-right text-[10px] text-silver/60">
-              {result.errorMessage}
-            </p>
+            <div className="relative group/tip min-w-0 flex-1 truncate text-right">
+              <p className="text-[10px] text-silver/60 cursor-help underline decoration-dotted">
+                {result.errorMessage}
+              </p>
+              <div className="absolute bottom-full right-0 mb-2 hidden group-hover/tip:block z-20 w-max max-w-xs p-2 text-[10px] leading-tight text-silver-bright bg-graphite border border-steel shadow-xl">
+                <p className="font-bold text-neon mb-1 uppercase tracking-tighter">Детали ошибки:</p>
+                <p>{result.errorMessage}</p>
+                {result.serverHeader && (
+                  <p className="mt-1 text-silver/60 border-t border-steel pt-1">
+                    Server: <span className="font-mono">{result.serverHeader}</span>
+                  </p>
+                )}
+              </div>
+            </div>
           ) : null}
         </dl>
       </div>
 
       <div className="flex flex-col border-l border-steel">
+        <button
+          type="button"
+          onClick={() => togglePin(target?.id ?? "")}
+          aria-label="Закрепить"
+          className={cn(
+            "flex flex-1 items-center justify-center px-2 transition-colors focus-visible:outline-none",
+            isPinned ? "bg-neon/10 text-neon" : "text-silver/50 hover:bg-steel hover:text-neon"
+          )}
+        >
+          {isPinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
+        </button>
         {onRetry ? (
           <button
             type="button"

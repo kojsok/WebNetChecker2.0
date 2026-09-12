@@ -37,6 +37,8 @@ export interface CheckResult {
   errorKind: ErrorKind | null;
   /** Human-readable error message when status is not "available". */
   errorMessage: string | null;
+  /** The 'Server' header value, if available. Helps detect captive portals. */
+  serverHeader: string | null;
   /** ISO timestamp of when the check finished. */
   checkedAt: string;
 }
@@ -56,6 +58,8 @@ export interface Target {
   name: string;
   url: string;
   category: string;
+  tags: string[];
+  pinned: boolean;
 }
 
 export interface Category {

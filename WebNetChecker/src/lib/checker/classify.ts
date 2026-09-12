@@ -93,10 +93,10 @@ export function classifyError(error: unknown): Classification {
   const message = collectMessages(error) || "Неизвестная ошибка";
 
   for (const code of codes) {
-    if (TIMEOUT_CODES.has(code)) return { kind: "timeout", message: "Превышен таймаут" };
-    if (DNS_CODES.has(code)) return { kind: "dns", message: "Ошибка DNS" };
-    if (TLS_CODES.has(code)) return { kind: "ssl", message: "Ошибка SSL/TLS" };
-    if (CONNECTION_CODES.has(code)) return { kind: "connection", message: "Соединение отклонено" };
+    if (TIMEOUT_CODES.has(code)) return { kind: "timeout", message: "Превышен таймаут ожидания ответа" };
+    if (DNS_CODES.has(code)) return { kind: "dns", message: "Сервер DNS не смог найти адрес хоста" };
+    if (TLS_CODES.has(code)) return { kind: "ssl", message: "Ошибка проверки SSL-сертификата (истек срок или самоподписан)" };
+    if (CONNECTION_CODES.has(code)) return { kind: "connection", message: "Соединение было сброшено или отклонено сервером" };
   }
 
   // Fall back to message sniffing for wrapped errors without errno codes.

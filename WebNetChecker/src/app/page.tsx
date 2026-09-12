@@ -94,6 +94,13 @@ export default function HomePage() {
     return ordered;
   }, [entries]);
 
+  const pinnedEntries = useMemo(() => {
+    return entries.filter((entry) => {
+      const target = useScanStore.getState().targets.find((t) => t.id === entry.targetId);
+      return target?.pinned;
+    });
+  }, [entries]);
+
   const retryOne = useCallback(
     (entry: FilteredEntry) => {
       const target = useScanStore.getState().targets.find((t) => t.id === entry.targetId);
@@ -141,6 +148,15 @@ export default function HomePage() {
         <EmptyState message="Ничего не найдено" hint="Измените фильтры или поисковый запрос." />
       ) : (
         <div className="flex flex-col gap-6">
+          {pinnedEntries.length > 0 && (
+            <CategorySection
+              label="Закрепленные"
+              entries={pinnedEntries}
+              onRetry={retryOne}
+              onRemove={removeOne}
+              onRemoveEnabled={false}
+            />
+          )}
           {grouped.map((group) => (
             <CategorySection
               key={group.id}

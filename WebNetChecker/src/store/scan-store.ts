@@ -1,3 +1,5 @@
+"use client";
+
 import { create } from "zustand";
 import { SEED_TARGETS } from "@/lib/config/services";
 import { normalizeUrl } from "@/lib/checker/normalize-url";
@@ -12,6 +14,7 @@ export type StatusFilter = "all" | "available" | "blocked" | "failed";
 export interface ScanState {
   targets: Target[];
   results: Record<string, CheckResult>;
+  history: Record<string, number[]>;
   order: string[];
   log: string[];
   isScanning: boolean;
@@ -22,6 +25,7 @@ export interface ScanState {
   mode: ViewMode;
   query: string;
   categoryFilter: string;
+  tagFilter: string | null;
   statusFilter: StatusFilter;
   sortKey: SortKey;
   autoRefreshMs: number;
@@ -29,12 +33,15 @@ export interface ScanState {
   setTargets: (targets: Target[]) => void;
   addTargets: (targets: Target[]) => void;
   removeTarget: (id: string) => void;
+  togglePin: (id: string) => void;
+  updateTags: (id: string, tags: string[]) => void;
   beginScan: (total: number) => void;
   applyEvent: (event: ScanEvent) => void;
   endScan: () => void;
   setMode: (mode: ViewMode) => void;
   setQuery: (query: string) => void;
   setCategoryFilter: (category: string) => void;
+  setTagFilter: (tag: string | null) => void;
   setStatusFilter: (filter: StatusFilter) => void;
   setSortKey: (key: SortKey) => void;
   setAutoRefreshMs: (ms: number) => void;
@@ -44,9 +51,10 @@ export interface ScanState {
 export const useScanStore = create<ScanState>((set) => ({
   targets: SEED_TARGETS.map((t) => {
     const res = normalizeUrl(t.url);
-    return res.ok ? { ...t, url: res.url } : t;
+    return res.ok ? { ...t, url: res.url, tags: [], pinned: false } : { ...t, tags: [], pinned: false };
   }),
   results: {},
+  history: {},
   order: [],
   log: [],
   isScanning: false,
@@ -64,16 +72,16 @@ export const useScanStore = create<ScanState>((set) => ({
   setTargets: (targets) => {
     const normalized = targets.map((t) => {
       const res = normalizeUrl(t.url);
-      return res.ok ? { ...t, url: res.url } : t;
+      return res.ok ? { ...t, url: res.url, tags: t.tags ?? [], pinned: t.pinned ?? false } : { ...t, tags: t.tags ?? [], pinned: t.pinned ?? false };
     });
-    set({ targets: normalized, results: {}, order: [], log: [], completed: 0, total: normalized.length });
+    set({ targets: normalized, results: {}, history: {}, order: [], log: [], completed: 0, total: normalized.length });
   },
 
   addTargets: (incoming) =>
     set((state) => {
       const normalizedIncoming = incoming.map((t) => {
         const res = normalizeUrl(t.url);
-        return res.ok ? { ...t, url: res.url } : t;
+        return res.ok ? { ...t, url: res.url, tags: t.tags ?? [], pinned: t.pinned ?? false } : { ...t, tags: t.tags ?? [], pinned: t.pinned ?? false };
       });
 
       const existing = new Set(state.targets.map((t) => t.url));
@@ -97,6 +105,16 @@ export const useScanStore = create<ScanState>((set) => ({
       return { targets, results, order, total: targets.length };
     }),
 
+  togglePin: (id) =>
+    set((state) => ({
+      targets: state.targets.map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t)),
+    })),
+
+  updateTags: (id, tags) =>
+    set((state) => ({
+      targets: state.targets.map((t) => (t.id === id ? { ...t, tags } : t)),
+    })),
+
   beginScan: (total) => set({ isScanning: true, completed: 0, total, error: null }),
 
   applyEvent: (event) =>
@@ -110,9 +128,17 @@ export const useScanStore = create<ScanState>((set) => ({
         const order = state.order.includes(result.url)
           ? state.order
           : [...state.order, result.url];
+
+        const history = { ...state.history };
+        if (result.latencyMs !== null) {
+          const h = history[result.url] ?? [];
+          history[result.url] = [...h, result.latencyMs].slice(-10);
+        }
+
         return {
           results,
           order,
+          history,
           completed: event.completed,
           log: [...state.log, terminalLineSafe(result)],
         };
@@ -140,13 +166,18 @@ export const useScanStore = create<ScanState>((set) => ({
     set(() => {
       const map: Record<string, CheckResult> = {};
       const order: string[] = [];
+      const history: Record<string, number[]> = {};
       for (const result of results) {
         map[result.url] = result;
         order.push(result.url);
+        if (result.latencyMs !== null) {
+          history[result.url] = [result.latencyMs];
+        }
       }
       return {
         results: map,
         order,
+        history,
         lastRunAt: finishedAt,
         completed: results.length,
         log: results.map(terminalLineSafe),

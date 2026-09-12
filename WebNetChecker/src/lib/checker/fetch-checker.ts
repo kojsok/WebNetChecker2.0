@@ -3,6 +3,12 @@ import { getSafeAgent, assertUrlAllowed, SsrfError } from "./ssrf-guard";
 import { classifyError, classifyHttpStatus, errorKindToStatus } from "./classify";
 import type { CheckOptions, CheckResult, Target } from "@/types/checker";
 
+function getHeader(headers: any, name: string): string | null {
+  if (!headers) return null;
+  if (typeof headers.get === "function") return headers.get(name);
+  return headers[name.toLowerCase()] ?? headers[name] ?? null;
+}
+
 /**
  * Build the per-check result from a target and a verdict.
  */
@@ -12,7 +18,7 @@ function buildResult(
   host: string,
   fields: Pick<
     CheckResult,
-    "status" | "httpStatus" | "latencyMs" | "errorKind" | "errorMessage"
+    "status" | "httpStatus" | "latencyMs" | "errorKind" | "errorMessage" | "serverHeader"
   >,
 ): CheckResult {
   return {
@@ -49,6 +55,7 @@ export async function checkTarget(target: Target, opts: CheckOptions): Promise<C
       latencyMs: null,
       errorKind: "connection",
       errorMessage: message,
+      serverHeader: null,
     });
   }
 
@@ -63,6 +70,7 @@ export async function checkTarget(target: Target, opts: CheckOptions): Promise<C
         latencyMs: null,
         errorKind: "unknown",
         errorMessage: "Проверка отменена",
+        serverHeader: null,
       });
     }
 
@@ -71,6 +79,7 @@ export async function checkTarget(target: Target, opts: CheckOptions): Promise<C
       const response = await performRequest(target.url, opts);
       const latencyMs = Math.round(performance.now() - startedAt);
       const status = classifyHttpStatus(response.statusCode);
+      const serverHeader = getHeader(response.headers, "server");
 
       // Drain the (tiny) body to free the socket back to the keep-alive pool.
       await response.body.dump();
@@ -81,6 +90,7 @@ export async function checkTarget(target: Target, opts: CheckOptions): Promise<C
         latencyMs,
         errorKind: status === "error" ? "unknown" : null,
         errorMessage: status === "error" ? `HTTP ${response.statusCode}` : null,
+        serverHeader,
       });
     } catch (error) {
       lastError = error;
@@ -95,6 +105,7 @@ export async function checkTarget(target: Target, opts: CheckOptions): Promise<C
           latencyMs,
           errorKind: classification.kind,
           errorMessage: classification.message,
+          serverHeader: null,
         });
       }
     }
@@ -108,11 +119,13 @@ export async function checkTarget(target: Target, opts: CheckOptions): Promise<C
     latencyMs: null,
     errorKind: classification.kind,
     errorMessage: classification.message,
+    serverHeader: null,
   });
 }
 
 interface MinimalResponse {
   statusCode: number;
+  headers: Record<string, string>;
   body: { dump: () => Promise<void> };
 }
 
