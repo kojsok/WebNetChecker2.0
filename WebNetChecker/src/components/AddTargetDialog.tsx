@@ -56,6 +56,7 @@ export function AddTargetDialog({ open, onClose }: { open: boolean; onClose: () 
   const addTargets = useScanStore((s) => s.addTargets);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [tags, setTags] = useState("");
   const [bulk, setBulk] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
@@ -73,10 +74,13 @@ export function AddTargetDialog({ open, onClose }: { open: boolean; onClose: () 
         name: name.trim() || normalized.host,
         url: normalized.url,
         category: "custom",
+        tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+        pinned: false,
       },
     ]);
     setName("");
     setUrl("");
+    setTags("");
     setMessage("Цель добавлена");
   };
 
@@ -128,6 +132,13 @@ export function AddTargetDialog({ open, onClose }: { open: boolean; onClose: () 
             value={name}
             onChange={(e) => setName(e.target.value)}
             aria-label="Имя цели"
+          />
+          <input
+            className={inputClass}
+            placeholder="Теги через запятую (например: #ai, #work)"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            aria-label="Теги цели"
           />
           <div className="flex gap-2">
             <input

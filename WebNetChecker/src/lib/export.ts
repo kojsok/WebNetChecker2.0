@@ -1,4 +1,4 @@
-import type { CheckResult } from "@/types/checker";
+import type { CheckResult, Target } from "@/types/checker";
 import { statusLabel, terminalLine } from "@/lib/format";
 
 export interface ExportRow {
@@ -91,4 +91,62 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 
 export function timestampSlug(): string {
   return new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+}
+
+export function targetsToJson(targets: readonly Target[]): string {
+  return JSON.stringify(
+    {
+      exportedAt: new Date().toISOString(),
+      count: targets.length,
+      targets,
+    },
+    null,
+    2,
+  );
+}
+
+export function targetsToCsv(targets: readonly Target[]): string {
+  const header = ["name", "url", "category", "tags", "pinned"];
+  const lines = [header.join(",")];
+  for (const target of targets) {
+    lines.push(
+      [
+        csvCell(target.name),
+        csvCell(target.url),
+        csvCell(target.category),
+        csvCell(target.tags.join(";")),
+        csvCell(String(target.pinned)),
+      ].join(","),
+    );
+  }
+  return lines.join("\n");
+}
+
+export function parseTargetsJson(json: string): Target[] {
+  const data = JSON.parse(json);
+  if (!data.targets || !Array.isArray(data.targets)) {
+    throw new Error("Invalid JSON format: missing targets array");
+  }
+  return data.targets;
+}
+
+export function parseTargetsCsv(csv: string): Target[] {
+  const lines = csv.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return [];
+
+  const targets: Target[] = [];
+  for (let i = 1; i < lines.length; i += 1) {
+    const cells = lines[i].split(","); // Simple split; real CSV needs a parser
+    if (cells.length < 2) continue;
+
+    targets.push({
+      id: `custom:${cells[1]}`,
+      name: cells[0] || cells[1],
+      url: cells[1],
+      category: cells[2] || "custom",
+      tags: cells[3] ? cells[3].split(";") : [],
+      pinned: cells[4] === "true",
+    });
+  }
+  return targets;
 }
